@@ -29,12 +29,6 @@ class CityScreen extends StatelessWidget {
             position: ToastPosition.bottom
         );
       } else if(state is WeatherStateSuccess) {
-        // Navigator.push(context, MaterialPageRoute(builder: (context) {
-        //   return InfoScreen(
-        //       weatherModel: state.weather,
-        //       city: state.city,
-        //   );
-        // }));
         Get.to(InfoScreen(
           weatherModel: state.weather,
           city: state.city,
@@ -65,7 +59,10 @@ class CityScreen extends StatelessWidget {
               children: [
                 Hero(
                     tag: 'anim',
-                    child: Lottie.asset('assets/main_anim.json')
+                    child: SizedBox(
+                        width: double.infinity,
+                        child: Lottie.asset('assets/main_anim.json')
+                    )
                 ),
                 const Text(
                   'Simple Weather App',

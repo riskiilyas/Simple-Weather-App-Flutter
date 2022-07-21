@@ -105,7 +105,6 @@ class InfoScreen extends StatelessWidget {
               ),
               ButtonWidget(
                   onTap: () {
-                    // Navigator.pop(context);
                     Get.back();
                   },
                   text: 'Back To Search'
