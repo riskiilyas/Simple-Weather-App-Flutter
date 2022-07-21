@@ -1,8 +1,15 @@
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:simple_weather_app/blocs/LocationBloc.dart';
+import 'package:simple_weather_app/screens/InfoScreen.dart';
+import 'package:simple_weather_app/utilities/widgets.dart';
 
 import '../blocs/WeatherBloc.dart';
 
@@ -15,6 +22,28 @@ class CityScreen extends StatelessWidget {
     final locationBloc = BlocProvider.of<LocationBloc>(context);
     var cityController = TextEditingController();
     locationBloc.add(LocationEvent());
+    weatherBloc.stream.listen((state) {
+      if(state is WeatherStateError) {
+        showToast(
+            'Error Network Request!',
+            position: ToastPosition.bottom
+        );
+      } else if(state is WeatherStateSuccess) {
+        // Navigator.push(context, MaterialPageRoute(builder: (context) {
+        //   return InfoScreen(
+        //       weatherModel: state.weather,
+        //       city: state.city,
+        //   );
+        // }));
+        Get.to(InfoScreen(
+          weatherModel: state.weather,
+          city: state.city,
+        ));
+        weatherBloc.add(WeatherEventInitial());
+      } else if(state is WeatherStateInitial) {
+        cityController.clear();
+      }
+    });
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -34,7 +63,10 @@ class CityScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Lottie.asset('assets/main_anim.json'),
+                Hero(
+                    tag: 'anim',
+                    child: Lottie.asset('assets/main_anim.json')
+                ),
                 const Text(
                   'Simple Weather App',
                   style: TextStyle(
@@ -53,7 +85,7 @@ class CityScreen extends StatelessWidget {
                 const SizedBox(height: 48),
                 TextFormField(
                   controller: cityController,
-                  style: const TextStyle(color: Colors.white70),
+                  style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
                     enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(10)),
@@ -75,51 +107,47 @@ class CityScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20,),
-                TextButton(
-                    onPressed: (){
-
-                    },
-                    child: Container(
-                      height: 50,
-                      color: Colors.redAccent,
-                      child: const Center(
-                        child: Text(
-                          'Search',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold
-                          ),
-                        ),
-                      ),
-                    )
-                ),
-                const SizedBox(height: 20,),
-                BlocBuilder<LocationBloc, LocationState>(
-                  builder: (context, state) {
-                    if(state is LocationStateError) showToast('Error Getting Location!');
-                    return Visibility(
-                        visible: state is LocationStateSuccess,
-                        child: TextButton(
-                          onPressed: () {
-
-                          },
-                          child: Container(
-                            height: 50,
+                BlocBuilder<WeatherBloc, WeatherState>(
+                    builder: (context, state) {
+                      if (state is WeatherStateLoading) {
+                        return const SpinKitWave(
+                          color: Colors.white,
+                          size: 64,
+                        );
+                      }
+                      return Column(
+                        children: [
+                          ButtonWidget(
+                            onTap: () {
+                              weatherBloc.add(WeatherEventFetchByCity(cityController.text));
+                            },
+                            text: 'Search',
                             color: Colors.redAccent,
-                            child: const Center(
-                              child: Text(
-                                'Search',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold
-                                ),
-                              ),
-                            ),
+                          ),
+                          const SizedBox(height: 8,),
+                          BlocBuilder<LocationBloc, LocationState>(
+                              builder: (context, state) {
+                                if (state is LocationStateError) {
+                                  showToast(
+                                      'Error Getting Location!',
+                                      position: ToastPosition.bottom);
+                                }
+                                return Visibility(
+                                    visible: state is LocationStateSuccess,
+                                    child: ButtonWidget(
+                                        onTap: () {
+                                          if(state is LocationStateSuccess) {
+                                            weatherBloc.add(WeatherEventFetchByLoc(state.latitude, state.longitude));
+                                          }
+                                        },
+                                        text: 'My Location'
+                                    )
+                                );
+                              }
                           )
-                        )
-                    );
-                  }
-                )
+                        ],
+                      );
+                    })
               ],
             ),
           ),

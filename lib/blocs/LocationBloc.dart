@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geocode/geocode.dart';
 import 'package:simple_weather_app/services/location.dart';
 import 'package:simple_weather_app/utilities/ServiceLocator.dart';
 

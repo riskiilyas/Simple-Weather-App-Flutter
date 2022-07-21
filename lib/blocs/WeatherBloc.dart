@@ -1,10 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geocode/geocode.dart';
 import 'package:simple_weather_app/models/WeatherModel.dart';
 import 'package:simple_weather_app/services/networking.dart';
 import 'package:simple_weather_app/utilities/ServiceLocator.dart';
 
 ///////////////////// EVENT ///////////////////
 class WeatherEvent {}
+
+class WeatherEventInitial extends WeatherEvent {}
 
 class WeatherEventFetchByCity extends WeatherEvent {
   final String city;
@@ -29,7 +32,8 @@ class WeatherStateError extends WeatherState {}
 
 class WeatherStateSuccess extends WeatherState {
   final WeatherModel weather;
-  WeatherStateSuccess(this.weather);
+  final String city;
+  WeatherStateSuccess(this.weather, this.city);
 }
 
 ///////////////////// BLoC ///////////////////
@@ -41,7 +45,7 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
         emit(WeatherStateLoading());
         try {
           final model = await _weatherNetwork.getWeatherByCity(event.city);
-          emit(WeatherStateSuccess(model));
+          emit(WeatherStateSuccess(model, event.city));
         } catch (e) {
           emit(WeatherStateError());
         }
@@ -51,10 +55,15 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
       emit(WeatherStateLoading());
       try {
         final model = await _weatherNetwork.getWeatherByLoc(event.latitude, event.longitude);
-        emit(WeatherStateSuccess(model));
+        final address = await GeoCode().reverseGeocoding(latitude: event.latitude, longitude: event.longitude);
+        emit(WeatherStateSuccess(model, address.city ?? "Unknown City"));
       } catch (e) {
         emit(WeatherStateError());
       }
+    });
+
+    on<WeatherEventInitial>((event, emit) async{
+      emit(WeatherStateInitial());
     });
   }
 
